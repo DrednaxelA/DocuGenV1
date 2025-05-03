@@ -28,13 +28,13 @@ git clone https://github.com/yourusername/DocuGenV1.git
 cd DocuGenV1
 pip install -r requirements.txt
 ```
-Run Locally
+### Run Locally
 ```bash
 python main.py
 ```
 Visit http://localhost:5000 in your browser.
 
-🗂️ Project Structure
+## 🗂️ Project Structure
 
 ```bash
 DocuGenV1/
@@ -45,13 +45,13 @@ DocuGenV1/
     └── index.html          # UI for form inputs
 ```
 
-🛠️ Environment Variables
+## 🛠️ Environment Variables
 
 | Variable | Default | Description           |
 | -------- | ------- | --------------------- |
 | `PORT`   | 5000    | Port Flask listens on |
 
-🔮 Planned Features
+## 🔮 Planned Features
 - User authentication
 - Support for Bank Statements and Sales documents
 - Editable line items before PDF generation
@@ -59,7 +59,7 @@ DocuGenV1/
 - Email sending of generated documents
 - Persistent storage and document history
 
-📄 License
+## 📄 License
 MIT License. Use freely, contribute openly.
 
 This README reflects the current state of an evolving project. Contributions and ideas are welcome!
