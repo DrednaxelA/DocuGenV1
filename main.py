@@ -174,20 +174,28 @@ def generate_supplier_statement(data):
     num_lines = safe_int(data.get("number_of_lines"), 0)
 
     for i in range(num_lines):
-        inv_data = {
-            # … your existing inv_data construction …
-        }
-        if make_invs:
-            try:
-                inv = create_invoice_pdf(inv_data)
-                invoice_refs.append(inv)
-                inv_name = inv["name"]
-            except Exception as e:
-                app.logger.error(f"Failed to generate invoice #{i}: {e}")
-                # fallback name so the table still renders
-                inv_name = f"INV-{uuid.uuid4().hex[:6]}"
-        else:
+     inv_data = {
+        "document_type": "invoice",
+        "supplier_name": supplier,
+        "customer_name": data.get("customer_name") or "Beta LLC",
+        "date": date_from_iso,
+        "due_date": data.get("due_date") or date_to_iso,
+        "currency": currency,
+        "line_items_count": safe_int(data.get("line_items_count"), 3),
+        "total_amount": safe_float(data.get("total_amount"), 0),
+        "tax_rate": tax_rate
+    }
+
+    if make_invs:
+        try:
+            inv = create_invoice_pdf(inv_data)
+            invoice_refs.append(inv)
+            inv_name = inv["name"]
+        except Exception as e:
+            app.logger.error(f"Failed to generate invoice #{i}: {e}")
             inv_name = f"INV-{uuid.uuid4().hex[:6]}"
+    else:
+        inv_name = f"INV-{uuid.uuid4().hex[:6]}"
 
         gross = inv_data.get("total_amount", 0.0)
         net   = gross / (1 + tax_rate / 100)
