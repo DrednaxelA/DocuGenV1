@@ -187,9 +187,12 @@ def generate_supplier_statement(data):
         }
 
         if make_invs:
-            inv = create_invoice_pdf(inv_data)
-            invoice_refs.append(inv)
-            inv_name = inv["name"]
+            try:
+                inv = create_invoice_pdf(inv_data)
+                invoice_refs.append(inv)
+            except Exception as e:
+                app.logger.error(f"Failed to generate invoice #{i}: {e}")
+                # continue on to the next line rather than aborting the whole PDF
         else:
             inv_name = f"INV-{uuid.uuid4().hex[:6]}"
 
