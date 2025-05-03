@@ -36,6 +36,7 @@ def format_date_for_pdf(iso_date: str, currency: str) -> str:
         dt = datetime.strptime(iso_date, "%Y-%m-%d")
     except Exception:
         return iso_date
+    # USD → MM/DD/YYYY; others → DD/MM/YYYY
     return dt.strftime("%m/%d/%Y") if currency.upper() == "USD" else dt.strftime("%d/%m/%Y")
 
 def safe_float(val, fallback=0.0):
@@ -140,11 +141,12 @@ def serve_file(filename):
 def generate_supplier_statement(data):
     supplier = data.get("supplier_name", "Acme Corp")
     date_from_iso = data.get("date_from") or datetime.today().strftime("%Y-%m-%d")
-    date_to_iso   = data.get("date_to") or datetime.today().strftime("%Y-%m-%d")
+    date_to_iso   = data.get("date_to")   or datetime.today().strftime("%Y-%m-%d")
     currency      = data.get("currency",  "USD")
     tax_rate      = safe_float(data.get("tax_rate"), 20)
     make_invs     = data.get("generate_invoices", False)
 
+    # Remap number_of_lines -> line_items_count for consistency
     if data.get("number_of_lines") is not None:
         data["line_items_count"] = data["number_of_lines"]
 
@@ -157,9 +159,10 @@ def generate_supplier_statement(data):
     pdf.cell(0, 10, "Supplier Statement", ln=True)
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 8, f"Supplier: {supplier}", ln=True)
-    pdf.cell(0,  8, f"Period: {from_str} - {to_str}",  ln=True)
+    pdf.cell(0, 8, f"Period: {from_str} - {to_str}", ln=True)
     pdf.ln(5)
 
+    # Table header
     pdf.set_font("Arial", "B", 12)
     pdf.cell(40, 8, "Invoice No", 1)
     pdf.cell(40, 8, "Date", 1)
@@ -167,66 +170,65 @@ def generate_supplier_statement(data):
     pdf.cell(40, 8, "Tax", 1, align="R")
     pdf.cell(40, 8, "Total", 1, ln=True, align="R")
 
+    # Table rows
     pdf.set_font("Arial", "", 12)
     total_statement = 0.0
-
     invoice_refs = []
-    num_lines = safe_int(data.get("number_of_lines"), 0) \
-        or safe_int(data.get("line_items_count"), 0)
+    num_lines = safe_int(data.get("number_of_lines"), 0) or safe_int(data.get("line_items_count"), 0)
 
     for i in range(num_lines):
-     inv_data = {
-        "document_type": "invoice",
-        "supplier_name": supplier,
-        "customer_name": data.get("customer_name") or "Beta LLC",
-        "date": date_from_iso,
-        "due_date": data.get("due_date") or date_to_iso,
-        "currency": currency,
-        "line_items_count": safe_int(data.get("line_items_count"), 3),
-        "total_amount": safe_float(data.get("total_amount"), 0),
-        "tax_rate": tax_rate
-    }
+        # Build each invoice’s data
+        inv_data = {
+            "document_type": "invoice",
+            "supplier_name": supplier,
+            "customer_name": data.get("customer_name") or "Beta LLC",
+            "date": date_from_iso,
+            "due_date": data.get("due_date") or date_to_iso,
+            "currency": currency,
+            "line_items_count": safe_int(data.get("line_items_count"), 3),
+            "total_amount": safe_float(data.get("total_amount"), 0),
+            "tax_rate": tax_rate
+        }
 
-    if make_invs:
-        try:
-            inv = create_invoice_pdf(inv_data)
-            invoice_refs.append(inv)
-            inv_name = inv["name"]
-        except Exception as e:
-            app.logger.error(f"Failed to generate invoice #{i}: {e}")
-            inv_name = f"INV-{uuid.uuid4().hex[:6]}"
-    else:
+        # Optionally generate and collect supporting invoices
         inv_name = f"INV-{uuid.uuid4().hex[:6]}"
+        if make_invs:
+            try:
+                inv = create_invoice_pdf(inv_data)
+                invoice_refs.append(inv)
+                inv_name = inv["name"]
+            except Exception as e:
+                app.logger.error(f"Failed to generate invoice #{i}: {e}")
 
-        gross = inv_data.get("total_amount", 0.0)
-        net   = gross / (1 + tax_rate / 100)
-        tax   = gross - net
-
+        # Always draw the row and accumulate total
+        gross   = inv_data["total_amount"]
+        net     = gross / (1 + tax_rate/100)
+        tax_amt = gross - net
         date_str = format_date_for_pdf(inv_data["date"], currency)
+
         pdf.cell(40, 8, inv_name, 1)
         pdf.cell(40, 8, date_str, 1)
         pdf.cell(40, 8, f"{currency} {net:.2f}", 1, align="R")
-        pdf.cell(40, 8, f"{currency} {tax:.2f}", 1, align="R")
+        pdf.cell(40, 8, f"{currency} {tax_amt:.2f}", 1, align="R")
         pdf.cell(40, 8, f"{currency} {gross:.2f}", 1, ln=True, align="R")
 
         total_statement += gross
 
+    # Total Due row
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(160, 8, "Total Due:", 1)
     pdf.cell(40, 8, f"{currency} {total_statement:.2f}", 1, ln=True, align="R")
 
+    # Output
     statement_filename = f"Supplier_Statement_{uuid.uuid4().hex[:8]}.pdf"
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    resp = {
-        "file": {"name": statement_filename, "url": f"/files/{statement_filename}"}
-    }
+    response = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
     if make_invs:
-        resp["invoices"] = invoice_refs
-
-    return jsonify(resp)
+        response["invoices"] = invoice_refs
+    return jsonify(response)
 
 def cleanup_old_files():
     now = time.time()
