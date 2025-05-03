@@ -1,203 +1,573 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Document Generator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
-    body { font-family: 'Source Sans Pro', sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #fff8f3; }
-    h1 { color: #ff6b00; text-transform: uppercase; margin-bottom: 30px; font-family: 'Anton', sans-serif; }
-    .form-group { margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-    label { width: 150px; color: #333; }
-    .input-group { flex: 1; display: flex; gap: 10px; align-items: center; }
-    input, select { flex: 1; padding: 6px; border: 2px solid #ffd0a8; border-radius: 4px; background: white; }
-    input:focus, select:focus { outline: none; border-color: #ff6b00; }
-    button { background: #ff6b00; color: white; padding: 8px 16px; border: none; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
-    .randomize-btn { background: #ff8533; padding: 6px 12px; font-size: 14px; }
-    .randomize-btn:hover { background: #ff9966; }
-    #spinner { margin: 20px auto; border: 6px solid #f3f3f3; border-top: 6px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; display: none; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    #generateBtn { margin-top: 20px; width: 100%; padding: 12px; font-size: 18px; font-family: 'Anton', sans-serif; }
-    #result { margin-top: 20px; padding: 20px; background: white; border-radius: 4px; border: 2px solid #ffd0a8; }
-    .download-link { display: block; color: #ff6b00; margin: 5px 0; text-decoration: none; }
-    .download-link:hover { color: #ff8533; }
-    .tooltip { position: relative; display: inline-block; cursor: help; }
-    .tooltip .tooltiptext { visibility: hidden; width: 160px; background: #333; color: #fff; text-align: center; border-radius: 4px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s; }
-    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
-  </style>
-</head>
-<body>
-  <h1>Document Generator</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Generator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Source+Sans+Pro:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Source Sans Pro", sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #fff8f3;
+      }
+      h1 {
+        color: #ff6b00;
+        text-transform: uppercase;
+        margin-bottom: 30px;
+        font-family: "Anton", sans-serif;
+      }
+      .form-group {
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      label {
+        width: 150px;
+        color: #333;
+      }
+      .input-group {
+        flex: 1;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      input,
+      select {
+        flex: 1;
+        padding: 6px;
+        border: 2px solid #ffd0a8;
+        border-radius: 4px;
+        background: white;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #ff6b00;
+      }
+      button {
+        background: #ff6b00;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+      .randomize-btn {
+        background: #ff8533;
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+      .randomize-btn:hover {
+        background: #ff9966;
+      }
+      #spinner {
+        margin: 20px auto;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      #generateBtn {
+        margin-top: 20px;
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+        font-family: "Anton", sans-serif;
+      }
+      #result {
+        margin-top: 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 4px;
+        border: 2px solid #ffd0a8;
+      }
+      .download-link {
+        display: block;
+        color: #ff6b00;
+        margin: 5px 0;
+        text-decoration: none;
+      }
+      .download-link:hover {
+        color: #ff8533;
+      }
+      .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+      }
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 160px;
+        background: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Document Generator</h1>
 
-  <div class="form-group" id="documentTypeGroup">
-    <label>Document Type:</label>
-    <div class="input-group">
-      <select id="documentType">
-        <option value="supplier_invoice">Supplier Invoice</option>
-        <option value="pos_receipt">POS Receipt</option>
-        <option value="supplier_credit_note">Supplier Credit Note</option>
-        <option value="supplier_statement">Supplier Statement</option>
-      </select>
+    <div class="form-group" id="documentTypeGroup">
+      <label>Document Type:</label>
+      <div class="input-group">
+        <select id="documentType">
+          <option value="supplier_invoice">Supplier Invoice</option>
+          <option value="pos_receipt">POS Receipt</option>
+          <option value="supplier_credit_note">Supplier Credit Note</option>
+          <option value="supplier_statement">Supplier Statement</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="dateGroup">
-    <label>Date:</label>
-    <div class="input-group">
-      <input type="text" id="dateField" placeholder="DD/MM/YYYY" disabled />
-      <input type="date" id="datePicker" />
+    <div class="form-group" id="dateGroup">
+      <label>Date:</label>
+      <div class="input-group">
+        <input type="text" id="dateField" placeholder="DD/MM/YYYY" disabled />
+        <input type="date" id="datePicker" />
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="dateRangeGroup" style="display:none;">
-    <label>Statement Period:</label>
-    <div class="input-group">
-      <input type="date" id="dateFrom" />
-      <span>to</span>
-      <input type="date" id="dateTo" />
+    <div class="form-group" id="dateRangeGroup" style="display: none">
+      <label>Statement Period:</label>
+      <div class="input-group">
+        <input type="date" id="dateFrom" />
+        <span>to</span>
+        <input type="date" id="dateTo" />
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="supplierNameGroup">
-    <label>Supplier Name:</label>
-    <div class="input-group">
-      <input type="text" id="supplierName" />
-      <button type="button" onclick="randomizeSupplier()" class="randomize-btn">🎲</button>
+    <div class="form-group" id="supplierNameGroup">
+      <label>Supplier Name:</label>
+      <div class="input-group">
+        <input type="text" id="supplierName" />
+        <button
+          type="button"
+          onclick="randomizeSupplier()"
+          class="randomize-btn"
+        >
+          🎲
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="customerNameGroup">
-    <label>Customer Name:</label>
-    <div class="input-group">
-      <input type="text" id="customerName" />
-      <button type="button" onclick="randomizeCustomer()" class="randomize-btn">🎲</button>
+    <div class="form-group" id="customerNameGroup">
+      <label>Customer Name:</label>
+      <div class="input-group">
+        <input type="text" id="customerName" />
+        <button
+          type="button"
+          onclick="randomizeCustomer()"
+          class="randomize-btn"
+        >
+          🎲
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="documentRefGroup">
-    <label>Document Reference:</label>
-    <div class="input-group">
-      <input type="text" id="documentRef" />
-      <button type="button" onclick="randomizeDocRef()" class="randomize-btn">🎲</button>
+    <div class="form-group" id="documentRefGroup">
+      <label>Document Reference:</label>
+      <div class="input-group">
+        <input type="text" id="documentRef" />
+        <button type="button" onclick="randomizeDocRef()" class="randomize-btn">
+          🎲
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="dueDateGroup">
-    <label>Due Date:</label>
-    <div class="input-group">
-      <input type="text" id="dueField" placeholder="DD/MM/YYYY" disabled />
-      <input type="date" id="duePicker" />
+    <div class="form-group" id="dueDateGroup">
+      <label>Due Date:</label>
+      <div class="input-group">
+        <input type="text" id="dueField" placeholder="DD/MM/YYYY" disabled />
+        <input type="date" id="duePicker" />
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="currencyGroup">
-    <label>Currency:
-      <span class="tooltip">ℹ
-        <span class="tooltiptext">GBP → UK dates (DD/MM/YYYY)<br />USD → US dates (MM/DD/YYYY)</span>
-      </span>
-    </label>
-    <div class="input-group">
-      <select id="currency">
-        <option value="GBP">GBP</option>
-        <option value="USD">USD</option>
-        <option value="EUR">EUR</option>
-      </select>
+    <div class="form-group" id="currencyGroup">
+      <label
+        >Currency:
+        <span class="tooltip"
+          >ℹ
+          <span class="tooltiptext"
+            >GBP → UK dates (DD/MM/YYYY)<br />USD → US dates (MM/DD/YYYY)</span
+          >
+        </span>
+      </label>
+      <div class="input-group">
+        <select id="currency">
+          <option value="GBP">GBP</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="taxRateGroup">
-    <label>Tax Rate (%):</label>
-    <div class="input-group">
-      <select id="taxRate">
-        <option value="5">5%</option>
-        <option value="10">10%</option>
-        <option value="15">15%</option>
-        <option value="20" selected>20%</option>
-        <option value="25">25%</option>
-      </select>
+    <div class="form-group" id="taxRateGroup">
+      <label>Tax Rate (%):</label>
+      <div class="input-group">
+        <select id="taxRate">
+          <option value="5">5%</option>
+          <option value="10">10%</option>
+          <option value="15">15%</option>
+          <option value="20" selected>20%</option>
+          <option value="25">25%</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="lineItemsCountGroup">
-    <label>Line Items Count:</label>
-    <div class="input-group">
-      <input type="number" id="lineItemsCount" value="3" min="1" max="10" />
-      <button type="button" onclick="randomizeLineItemsCount()" class="randomize-btn">🎲</button>
+    <div class="form-group" id="lineItemsCountGroup">
+      <label>Line Items Count:</label>
+      <div class="input-group">
+        <input type="number" id="lineItemsCount" value="3" min="1" max="10" />
+        <button
+          type="button"
+          onclick="randomizeLineItemsCount()"
+          class="randomize-btn"
+        >
+          🎲
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="countGroup">
-    <label>Count:</label>
-    <div class="input-group">
-      <select id="count">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10</option>
-      </select>
+    <div class="form-group" id="countGroup">
+      <label>Count:</label>
+      <div class="input-group">
+        <select id="count">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="totalAmountGroup">
-    <label>Total Amount:</label>
-    <div class="input-group">
-      <input type="text" id="totalAmount" placeholder="0.00" />
-      <button type="button" onclick="randomizeTotalAmount()" class="randomize-btn">🎲</button>
+    <div class="form-group" id="totalAmountGroup">
+      <label>Total Amount:</label>
+      <div class="input-group">
+        <input type="text" id="totalAmount" placeholder="0.00" />
+        <button
+          type="button"
+          onclick="randomizeTotalAmount()"
+          class="randomize-btn"
+        >
+          🎲
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-group" id="generateInvoicesGroup">
-    <label>Generate supporting invoices?</label>
-    <div class="input-group">
-      <label class="switch"><input type="checkbox" id="generateInvoices" /><span class="slider"></span></label>
+    <div class="form-group" id="generateInvoicesGroup">
+      <label>Generate supporting invoices?</label>
+      <div class="input-group">
+        <label class="switch"
+          ><input type="checkbox" id="generateInvoices" /><span
+            class="slider"
+          ></span
+        ></label>
+      </div>
     </div>
-  </div>
 
-  <button onclick="generateDocument()" id="generateBtn">Generate Document</button>
-  <div id="result"></div>
-  <div id="spinner"></div>
+    <button onclick="generateDocument()" id="generateBtn">
+      Generate Document
+    </button>
+    <div id="result"></div>
+    <div id="spinner"></div>
 
-  <script>
-    const vis = {
-      supplier_invoice: ['dateGroup','supplierNameGroup','customerNameGroup','documentRefGroup','dueDateGroup','currencyGroup','taxRateGroup','lineItemsCountGroup','countGroup','totalAmountGroup'],
-      pos_receipt:     ['dateGroup','supplierNameGroup','documentRefGroup','currencyGroup','taxRateGroup','lineItemsCountGroup','countGroup','totalAmountGroup'],
-      supplier_credit_note: ['dateGroup','supplierNameGroup','documentRefGroup','currencyGroup','taxRateGroup','lineItemsCountGroup','countGroup','totalAmountGroup'],
-      supplier_statement:   ['dateRangeGroup','supplierNameGroup','currencyGroup','taxRateGroup','totalAmountGroup','generateInvoicesGroup']
-    };
+    <script>
+      const vis = {
+        supplier_invoice: [
+          "dateGroup",
+          "supplierNameGroup",
+          "customerNameGroup",
+          "documentRefGroup",
+          "dueDateGroup",
+          "currencyGroup",
+          "taxRateGroup",
+          "lineItemsCountGroup",
+          "countGroup",
+          "totalAmountGroup",
+        ],
+        pos_receipt: [
+          "dateGroup",
+          "supplierNameGroup",
+          "documentRefGroup",
+          "currencyGroup",
+          "taxRateGroup",
+          "lineItemsCountGroup",
+          "countGroup",
+          "totalAmountGroup",
+        ],
+        supplier_credit_note: [
+          "dateGroup",
+          "supplierNameGroup",
+          "documentRefGroup",
+          "currencyGroup",
+          "taxRateGroup",
+          "lineItemsCountGroup",
+          "countGroup",
+          "totalAmountGroup",
+        ],
+        supplier_statement: [
+          "dateRangeGroup",
+          "supplierNameGroup",
+          "currencyGroup",
+          "taxRateGroup",
+          "totalAmountGroup",
+          "linesCountGroup",
+          "generateInvoicesGroup",
+        ],
+      };
 
-    let dateISO='', fromISO='', toISO='', dueISO='';
+      let dateISO = "";
+      let fromISO = "";
+      let toISO = "";
+      let dueISO = "";
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      randomizeDocRef(); updateVisibility(); renderDates();
-      document.getElementById('documentType').addEventListener('change',()=>{ updateVisibility(); renderDates(); });
-      document.getElementById('datePicker').addEventListener('change',e=>{ dateISO=e.target.value; renderDates(); });
-      document.getElementById('duePicker').addEventListener('change',e=>{ dueISO=e.target.value; renderDates(); });
-      document.getElementById('dateFrom').addEventListener('change',e=>{ fromISO=e.target.value; });
-      document.getElementById('dateTo').addEventListener('change',e=>{ toISO=e.target.value; });
-      document.getElementById('currency').addEventListener('change',renderDates);
-    });
+      document.addEventListener("DOMContentLoaded", () => {
+        randomizeDocRef();
+        updateVisibility();
+        renderDates();
+        document
+          .getElementById("documentType")
+          .addEventListener("change", () => {
+            updateVisibility();
+            renderDates();
+          });
+        document
+          .getElementById("datePicker")
+          .addEventListener("change", (e) => {
+            dateISO = e.target.value;
+            renderDates();
+          });
+        document.getElementById("duePicker").addEventListener("change", (e) => {
+          dueISO = e.target.value;
+          renderDates();
+        });
+        document.getElementById("dateFrom").addEventListener("change", (e) => {
+          fromISO = e.target.value;
+        });
+        document.getElementById("dateTo").addEventListener("change", (e) => {
+          toISO = e.target.value;
+        });
+        document
+          .getElementById("currency")
+          .addEventListener("change", renderDates);
+      });
 
-    function updateVisibility(){ const t=document.getElementById('documentType').value; const show=vis[t]||[]; const all=['dateGroup','dateRangeGroup','supplierNameGroup','customerNameGroup','documentRefGroup','dueDateGroup','currencyGroup','taxRateGroup','lineItemsCountGroup','countGroup','totalAmountGroup','generateInvoicesGroup']; all.forEach(id=>document.getElementById(id).style.display=show.includes(id)?'flex':'none'); }
-    function getLocale(){ return document.getElementById('currency').value==='USD'?'US':'UK'; }
-    function formatDate(iso,loc){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return loc==='UK'?`${d}/${m}/${y}`:`${m}/${d}/${y}`; }
-    function renderDates(){ const loc=getLocale(); document.getElementById('dateField').value=formatDate(dateISO,loc); document.getElementById('dueField').value=formatDate(dueISO,loc); }
+      function updateVisibility() {
+        const t = document.getElementById("documentType").value;
+        const show = vis[t] || [];
+        const all = [
+          "dateGroup",
+          "dateRangeGroup",
+          "supplierNameGroup",
+          "customerNameGroup",
+          "documentRefGroup",
+          "dueDateGroup",
+          "currencyGroup",
+          "taxRateGroup",
+          "lineItemsCountGroup",
+          "countGroup",
+          "totalAmountGroup",
+          "linesCountGroup",
+          "generateInvoicesGroup",
+        ];
+        all.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = show.includes(id) ? "flex" : "none";
+        });
+      }
 
-    function randomizeSupplier(){ const arr=['Acme Corp','TechGlobal','MegaCorp','StarSupply','InnovateInc']; document.getElementById('supplierName').value=arr[Math.floor(Math.random()*arr.length)]; }
-    function randomizeCustomer(){ const arr=['Beta LLC','ConsumerCo','ShopMaster','RetailPro','BuyRight']; document.getElementById('customerName').value=arr[Math.floor(Math.random()*arr.length)]; }
-    function randomizeDocRef(){ const pre=document.getElementById('documentType').value.substring(0,3).toUpperCase(); const y=new Date().getFullYear(); const r=Math.floor(Math.random()*10000).toString().padStart(4,'0'); document.getElementById('documentRef').value=`${pre}-${y}-${r}`; }
-    function randomizeLineItemsCount(){ document.getElementById('lineItemsCount').value=Math.floor(Math.random()*8)+1; }
-    function randomizeTotalAmount(){ document.getElementById('totalAmount').value=(Math.random()*9900+100).toFixed(2); }
+      function getLocale() {
+        return document.getElementById("currency").value === "USD"
+          ? "US"
+          : "UK";
+      }
 
-    function validateForm(){ const fields=document.querySelectorAll('.form-group:not([style*="display:none"]) input, .form-group:not([style*="display:none"]) select'); for(const f of fields){ if(!f.value){ alert('Please fill all required fields'); return false; }} return true; }
+      function formatDate(iso, loc) {
+        if (!iso) return "";
+        const [y, m, d] = iso.split("-");
+        return loc === "UK" ? `${d}/${m}/${y}` : `${m}/${d}/${y}`;
+      }
 
-    async function generateDocument(){ if(!validateForm()) return; const btn=document.getElementById('generateBtn'); btn.disabled=true; btn.textContent='Generating...'; document.getElementById('spinner').style.display='block'; const data={ document_type:document.getElementById('documentType').value, date:dateISO, date_from:fromISO, date_to:toISO, due_date:dueISO, supplier_name:document.getElementById('supplierName').value, customer_name:document.getElementById('customerName').value, document_ref:document.getElementById('documentRef').value, currency:document.getElementById('currency').value, tax_rate:parseFloat(document.getElementById('taxRate').value), line_items_count:parseInt(document.getElementById('lineItemsCount').value), count:parseInt(document.getElementById('count').value), total_amount:parseFloat(document.getElementById('totalAmount').value), generate_invoices:document.getElementById('generateInvoices').checked }; try{ const res=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); const result=await res.json(); const rd=document.getElementById('result'); rd.innerHTML=''; (Array.isArray(result.file)?result.file:[result.file]).forEach(f=>{ const a=document.createElement('a'); a.href=f.url; a.textContent=`Download ${f.name}`; a.className='download-link'; a.target='_blank'; rd.appendChild(a); }); if(result.invoices){ const h=document.createElement('h4'); h.textContent='Supporting Invoices:'; rd.appendChild(h); result.invoices.forEach(inv=>{ const a=document.createElement('a'); a.href=inv.url; a.textContent=`Download ${inv.name}`; a.className='download-link'; a.target='_blank'; rd.appendChild(a); }); }}catch(e){ alert('Error generating document'); console.error(e);}finally{ btn.disabled=false; btn.textContent='Generate Document'; document.getElementById('spinner').style.display='none'; }}
-  </script>
-</body>
+      function renderDates() {
+        const loc = getLocale();
+        document.getElementById("dateField").value = formatDate(dateISO, loc);
+        document.getElementById("dueField").value = formatDate(dueISO, loc);
+        // optionally show formatted range text if needed
+      }
+
+      function randomizeSupplier() {
+        const arr = [
+          "Acme Corp",
+          "TechGlobal",
+          "MegaCorp",
+          "StarSupply",
+          "InnovateInc",
+        ];
+        document.getElementById("supplierName").value =
+          arr[Math.floor(Math.random() * arr.length)];
+      }
+      function randomizeCustomer() {
+        const arr = [
+          "Beta LLC",
+          "ConsumerCo",
+          "ShopMaster",
+          "RetailPro",
+          "BuyRight",
+        ];
+        document.getElementById("customerName").value =
+          arr[Math.floor(Math.random() * arr.length)];
+      }
+      function randomizeDocRef() {
+        const pre = document
+          .getElementById("documentType")
+          .value.substring(0, 3)
+          .toUpperCase();
+        const y = new Date().getFullYear();
+        const r = Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(4, "0");
+        document.getElementById("documentRef").value = `${pre}-${y}-${r}`;
+      }
+      function randomizeLineItemsCount() {
+        document.getElementById("lineItemsCount").value =
+          Math.floor(Math.random() * 8) + 1;
+      }
+      function randomizeTotalAmount() {
+        document.getElementById("totalAmount").value = (
+          Math.random() * 9900 +
+          100
+        ).toFixed(2);
+      }
+
+      function validateForm() {
+        const t = document.getElementById("documentType").value;
+        if (t === "supplier_statement") {
+          return !!(
+            document.getElementById("supplierName").value &&
+            fromISO &&
+            toISO
+          );
+        }
+        const req = document.querySelectorAll(
+          '.form-group:not([style*="display: none"]) input, .form-group:not([style*="display: none"]) select'
+        );
+        return Array.from(req).every((f) => f.value.trim() !== "");
+      }
+
+      async function generateDocument() {
+        if (!validateForm()) {
+          alert("Fill all required");
+          return;
+        }
+        const btn = document.getElementById("generateBtn");
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        document.getElementById("spinner").style.display = "block";
+        const payload = {
+          document_type: document.getElementById("documentType").value,
+          date: dateISO,
+          due_date: dueISO,
+          date_from: fromISO,
+          date_to: toISO,
+          supplier_name: document.getElementById("supplierName").value,
+          customer_name: document.getElementById("customerName").value,
+          document_ref: document.getElementById("documentRef").value,
+          currency: document.getElementById("currency").value,
+          tax_rate: parseFloat(document.getElementById("taxRate").value),
+          line_items_count: parseInt(
+            document.getElementById("lineItemsCount").value
+          ),
+          count: parseInt(document.getElementById("count").value),
+          total_amount: parseFloat(
+            document.getElementById("totalAmount").value
+          ),
+          number_of_lines: parseInt(
+            document.getElementById("linesCount").value
+          ),
+          generate_invoices:
+            document.getElementById("generateInvoices").checked,
+        };
+        try {
+          const res = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const result = await res.json();
+          const rd = document.getElementById("result");
+          rd.innerHTML = "";
+          const files = Array.isArray(result.file)
+            ? result.file
+            : [result.file];
+          files.forEach((f) => {
+            const a = document.createElement("a");
+            a.href = f.url;
+            a.textContent = `Download ${f.name}`;
+            a.className = "download-link";
+            a.target = "_blank";
+            rd.appendChild(a);
+          });
+          if (result.invoices) {
+            const h = document.createElement("h4");
+            h.textContent = "Supporting Invoices:";
+            rd.appendChild(h);
+            result.invoices.forEach((inv) => {
+              const a = document.createElement("a");
+              a.href = inv.url;
+              a.textContent = `Download ${inv.name}`;
+              a.className = "download-link";
+              a.target = "_blank";
+              rd.appendChild(a);
+            });
+          }
+        } catch (e) {
+          document.getElementById("result").innerText =
+            "Error generating document";
+          console.error(e);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Generate Document";
+          document.getElementById("spinner").style.display = "none";
+        }
+      }
+    </script>
+  </body>
 </html>
