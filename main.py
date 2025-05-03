@@ -8,20 +8,6 @@ import random
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
-# ==== Helper Utilities ====
-def safe_float(value, default=0.0):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return default
-
-def safe_int(value, default=0):
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
-
-# ==== Sample Data ====
 product_descriptions = [
     "Premium Leather Office Chair",
     "Wireless Mechanical Keyboard",
@@ -52,6 +38,18 @@ def format_date_for_pdf(iso_date: str, currency: str) -> str:
         return iso_date
     return dt.strftime("%m/%d/%Y") if currency.upper() == "USD" else dt.strftime("%d/%m/%Y")
 
+def safe_float(val, fallback=0.0):
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return fallback
+
+def safe_int(val, fallback=0):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return fallback
+
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -65,7 +63,7 @@ def generate_pdf():
     if doc_type == "Supplier Statement":
         return generate_supplier_statement(data)
 
-    count = safe_int(data.get("count", 1))
+    count = safe_int(data.get("count"), 1)
     filenames = [create_invoice_pdf(data) for _ in range(count)]
     return jsonify({"file": filenames[0] if count == 1 else filenames})
 
@@ -73,10 +71,10 @@ def create_invoice_pdf(data):
     doc_type = data.get("document_type", "Invoice").replace("_", " ").title()
     currency = data.get("currency", "USD")
     supplier = data.get("supplier_name", "Acme Corp")
-    customer = data.get("customer_name", "Beta LLC")
+    customer = data.get("customer_name") or "Beta LLC"
     document_ref = data.get("document_ref") or f"INV-{uuid.uuid4().hex[:8]}"
-    date_iso = data.get("date", datetime.today().strftime("%Y-%m-%d"))
-    due_date_iso = data.get("due_date", "")
+    date_iso = data.get("date") or datetime.today().strftime("%Y-%m-%d")
+    due_date_iso = data.get("due_date") or ""
     line_items_count = safe_int(data.get("line_items_count"), 3)
     total_amount = safe_float(data.get("total_amount"), 0)
     tax_rate = safe_float(data.get("tax_rate"), 20)
@@ -119,9 +117,8 @@ def create_invoice_pdf(data):
         pdf.cell(40, 10, f"{currency} {amount:.2f}", 1, ln=True)
     pdf.ln(10)
 
-    # Calculate breakdown
     gross = total_amount
-    net = gross / (1 + tax_rate / 100)
+    net = gross / (1 + tax_rate/100)
     tax_amt = gross - net
 
     pdf.cell(0, 10, f"Net Amount: {currency} {net:.2f}", ln=True)
@@ -142,14 +139,14 @@ def serve_file(filename):
 
 def generate_supplier_statement(data):
     supplier = data.get("supplier_name", "Acme Corp")
-    date_from_iso = data.get("date_from", datetime.today().strftime("%Y-%m-%d"))
-    date_to_iso = data.get("date_to", datetime.today().strftime("%Y-%m-%d"))
-    currency = data.get("currency", "USD")
-    tax_rate = safe_float(data.get("tax_rate"), 20)
-    make_invs = data.get("generate_invoices", False)
+    date_from_iso = data.get("date_from") or datetime.today().strftime("%Y-%m-%d")
+    date_to_iso   = data.get("date_to") or datetime.today().strftime("%Y-%m-%d")
+    currency      = data.get("currency",  "USD")
+    tax_rate      = safe_float(data.get("tax_rate"), 20)
+    make_invs     = data.get("generate_invoices", False)
 
     from_str = format_date_for_pdf(date_from_iso, currency)
-    to_str = format_date_for_pdf(date_to_iso, currency)
+    to_str   = format_date_for_pdf(date_to_iso, currency)
 
     pdf = FPDF()
     pdf.add_page()
@@ -169,20 +166,21 @@ def generate_supplier_statement(data):
 
     pdf.set_font("Arial", "", 12)
     total_statement = 0.0
+
     invoice_refs = []
     num_lines = safe_int(data.get("number_of_lines"), 0)
 
     for i in range(num_lines):
         inv_data = {
-            "document_type": "invoice",
-            "supplier_name": supplier,
-            "customer_name": data.get("customer_name", "Beta LLC"),
-            "date": date_from_iso,
-            "due_date": data.get("due_date", ""),
-            "currency": currency,
+            "document_type":   "invoice",
+            "supplier_name":   supplier,
+            "customer_name":   data.get("customer_name") or "Beta LLC",
+            "date":            date_from_iso,
+            "due_date":        data.get("due_date") or date_to_iso,
+            "currency":        currency,
             "line_items_count": safe_int(data.get("line_items_count"), 3),
-            "total_amount": safe_float(data.get("total_amount"), 0),
-            "tax_rate": tax_rate
+            "total_amount":     safe_float(data.get("total_amount"), 0),
+            "tax_rate":         tax_rate
         }
 
         if make_invs:
@@ -193,10 +191,10 @@ def generate_supplier_statement(data):
             inv_name = f"INV-{uuid.uuid4().hex[:6]}"
 
         gross = inv_data["total_amount"]
-        net = gross / (1 + tax_rate / 100)
-        tax = gross - net
-        date_str = format_date_for_pdf(inv_data["date"], currency)
+        net   = gross / (1 + tax_rate / 100)
+        tax   = gross - net
 
+        date_str = format_date_for_pdf(inv_data["date"], currency)
         pdf.cell(40, 8, inv_name, 1)
         pdf.cell(40, 8, date_str, 1)
         pdf.cell(40, 8, f"{currency} {net:.2f}", 1, align="R")
@@ -214,7 +212,9 @@ def generate_supplier_statement(data):
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    resp = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
+    resp = {
+        "file": {"name": statement_filename, "url": f"/files/{statement_filename}"}
+    }
     if make_invs:
         resp["invoices"] = invoice_refs
 
