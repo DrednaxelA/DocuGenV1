@@ -189,7 +189,7 @@ def generate_supplier_statement(data):
         else:
             inv_name = f"INV-{uuid.uuid4().hex[:6]}"
 
-        gross = inv_data["total_amount"]
+        gross = inv_data.get("total_amount", 0.0)
         net   = gross / (1 + tax_rate / 100)
         tax   = gross - net
 
