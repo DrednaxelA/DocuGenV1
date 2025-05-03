@@ -574,18 +574,30 @@
 
           const result = await response.json();
           resultDiv.innerHTML = "";
+          const files = Array.isArray(result.file)
+            ? result.file
+            : [result.file];
+          files.forEach((file) => {
+            const link = document.createElement("a");
+            link.href = file.url;
+            link.textContent = `Download ${file.name}`;
+            link.target = "_blank";
+            link.className = "download-link";
+            resultDiv.appendChild(link);
+          });
 
-          if (Array.isArray(result.file)) {
-            result.file.forEach((file) => {
+          if (result.invoices) {
+            const hdr = document.createElement("h4");
+            hdr.textContent = "Supporting Invoices:";
+            resultDiv.appendChild(hdr);
+            result.invoices.forEach((inv) => {
               const link = document.createElement("a");
-              link.href = file.url;
-              link.textContent = `Download ${file.name}`;
+              link.href = inv.url;
+              link.textContent = `Download ${inv.name}`;
               link.target = "_blank";
-              link.style.display = "block";
+              link.className = "download-link";
               resultDiv.appendChild(link);
             });
-          } else {
-            resultDiv.innerHTML = "Unexpected response from server.";
           }
         } catch (error) {
           resultDiv.innerHTML = "⚠️ Error generating document.";
