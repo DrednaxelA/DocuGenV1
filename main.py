@@ -37,91 +37,91 @@ def index():
 def generate_pdf():
     cleanup_old_files()
     data = request.json
-    doc_type = data.get("document_type", "invoice").replace("_", " ").title()
-    # Common fields
-    count = int(data.get("count", 1))
-    currency = data.get("currency", "USD")
-    supplier = data.get("supplier_name", "Acme Corp")
-    customer = data.get("customer_name", "Beta LLC")
-    total_amount = data.get("total_amount", "")        
-    
-    # Supplier Statement
-    number_of_lines = int(data.get("number_of_lines", 0))
-    generate_invoices = data.get("generate_invoices", False)
-    date = data.get("date", "2025-04-30")
 
-    # Dispatch for Supplier Statement
+    doc_type = data.get("document_type", "invoice").replace("_", " ").title()
     if doc_type == "Supplier Statement":
         return generate_supplier_statement(data)
 
+    count = int(data.get("count", 1))
     filenames = []
-    for i in range(count):
-        filename = f"{doc_type.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
-        filepath = os.path.join(FILES_DIR, filename)
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 16)
-        pdf.cell(0, 10, f"{doc_type}", ln=True)
-        pdf.set_font("Arial", "", 12)
-        pdf.cell(0, 10, f"Document Reference: {data.get('document_ref', '')}", ln=True)
-        pdf.cell(0, 10, f"Supplier: {supplier}", ln=True)
-        pdf.cell(0, 10, f"Customer: {customer}", ln=True)
-        pdf.cell(0, 10, f"Date: {date}", ln=True)
-        due_date = data.get("due_date")
-        if due_date:
-            pdf.cell(0, 10, f"Due Date: {due_date}", ln=True)
-        pdf.ln(10)
-
-        # Add line items
-        line_items_count = int(data.get("line_items_count", 3))
-        total_float = 0
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(80, 10, "Description", 1)
-        pdf.cell(30, 10, "Quantity", 1)
-        pdf.cell(40, 10, "Unit Price", 1)
-        pdf.cell(40, 10, "Amount", 1, ln=True)
-        pdf.set_font("Arial", "", 12)
-        for _ in range(line_items_count):
-            quantity = float(data.get("quantity", round(random.uniform(1, 10))))
-            unit_price = float(data.get("unit_price", round(random.uniform(10, 1000), 2)))
-            amount = quantity * unit_price
-            total_float += amount
-            pdf.cell(80, 10, f"{random.choice(product_descriptions)}", 1)
-            pdf.cell(30, 10, f"{quantity:.0f}", 1)
-            pdf.cell(40, 10, f"{currency} {unit_price:.2f}", 1)
-            pdf.cell(40, 10, f"{currency} {amount:.2f}", 1, ln=True)
-        pdf.ln(10)
-
-        tax_rate = float(data.get("tax_rate", 20))
-        tax_amount = total_float * (tax_rate / 100)
-        grand_total = total_float + tax_amount
-        pdf.cell(0, 10, f"Subtotal: {currency} {total_float:.2f}", ln=True)
-        pdf.cell(0, 10, f"Tax Rate: {tax_rate}%", ln=True)
-        pdf.cell(0, 10, f"Tax Amount: {currency} {tax_amount:.2f}", ln=True)
-        pdf.cell(0, 10, f"Total: {currency} {grand_total:.2f}", ln=True)
-        pdf.output(filepath)
-        filenames.append({"name": filename, "url": f"/files/{filename}"})
+    for _ in range(count):
+        filenames.append(create_invoice_pdf(data))
 
     return jsonify({"file": filenames[0] if count == 1 else filenames})
+
+def create_invoice_pdf(data):
+    doc_type = data.get("document_type", "Invoice").replace("_", " ").title()
+    currency = data.get("currency", "USD")
+    supplier = data.get("supplier_name", "Acme Corp")
+    customer = data.get("customer_name", "Beta LLC")
+    document_ref = data.get("document_ref", f"INV-{uuid.uuid4().hex[:8]}")
+    date = data.get("date", "2025-04-30")
+    due_date = data.get("due_date", "")
+    line_items_count = int(data.get("line_items_count", 3))
+    tax_rate = float(data.get("tax_rate", 20))
+
+    filename = f"{doc_type.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
+    filepath = os.path.join(FILES_DIR, filename)
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, doc_type, ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Document Reference: {document_ref}", ln=True)
+    pdf.cell(0, 10, f"Supplier: {supplier}", ln=True)
+    pdf.cell(0, 10, f"Customer: {customer}", ln=True)
+    pdf.cell(0, 10, f"Date: {date}", ln=True)
+    if due_date:
+        pdf.cell(0, 10, f"Due Date: {due_date}", ln=True)
+    pdf.ln(10)
+
+    # Line Items
+    total_float = 0
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(80, 10, "Description", 1)
+    pdf.cell(30, 10, "Quantity", 1)
+    pdf.cell(40, 10, "Unit Price", 1)
+    pdf.cell(40, 10, "Amount", 1, ln=True)
+
+    pdf.set_font("Arial", "", 12)
+    for _ in range(line_items_count):
+        quantity = float(data.get("quantity", round(random.uniform(1, 10))))
+        unit_price = float(data.get("unit_price", round(random.uniform(10, 1000), 2)))
+        amount = quantity * unit_price
+        total_float += amount
+        pdf.cell(80, 10, random.choice(product_descriptions), 1)
+        pdf.cell(30, 10, f"{quantity:.0f}", 1)
+        pdf.cell(40, 10, f"{currency} {unit_price:.2f}", 1)
+        pdf.cell(40, 10, f"{currency} {amount:.2f}", 1, ln=True)
+    pdf.ln(10)
+
+    tax_amount = total_float * (tax_rate / 100)
+    grand_total = total_float + tax_amount
+    pdf.cell(0, 10, f"Subtotal: {currency} {total_float:.2f}", ln=True)
+    pdf.cell(0, 10, f"Tax Rate: {tax_rate}%", ln=True)
+    pdf.cell(0, 10, f"Tax Amount: {currency} {tax_amount:.2f}", ln=True)
+    pdf.cell(0, 10, f"Total: {currency} {grand_total:.2f}", ln=True)
+
+    pdf.output(filepath)
+    return {"name": filename, "url": f"/files/{filename}"}
 
 @app.route("/files/<filename>")
 def serve_file(filename):
     if '..' in filename or filename.startswith('/'):
         return {"error": "Invalid filename"}, 400
-    if not os.path.exists(os.path.join(FILES_DIR, filename)):
+    filepath = os.path.join(FILES_DIR, filename)
+    if not os.path.exists(filepath):
         return {"error": "File not found"}, 404
     return send_from_directory(FILES_DIR, filename, as_attachment=True)
 
-
 def generate_supplier_statement(data):
-    # Extract Supplier Statement fields
     supplier = data.get("supplier_name", "Acme Corp")
     date = data.get("date", "2025-04-30")
     total = data.get("total_amount", "")
     lines = int(data.get("number_of_lines", 0))
     make_invs = data.get("generate_invoices", False)
 
-    # Build PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -132,16 +132,31 @@ def generate_supplier_statement(data):
     pdf.cell(0, 10, f"Total Amount: {total}", ln=True)
     pdf.cell(0, 10, f"Number of Lines: {lines}", ln=True)
 
-    # TODO: If make_invs, generate separate invoices here
+    statement_filename = f"Supplier_Statement_{uuid.uuid4().hex[:8]}.pdf"
+    statement_filepath = os.path.join(FILES_DIR, statement_filename)
+    pdf.output(statement_filepath)
 
-    filename = f"Supplier_Statement_{uuid.uuid4().hex[:8]}.pdf"
-    filepath = os.path.join(FILES_DIR, filename)
-    pdf.output(filepath)
-    return jsonify({"file": {"name": filename, "url": f"/files/{filename}"}})
+    response = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
 
+    if make_invs:
+        invoice_refs = []
+        for _ in range(lines):
+            invoice_data = {
+                "document_type": "invoice",
+                "supplier_name": supplier,
+                "customer_name": data.get("customer_name", "Beta LLC"),
+                "date": date,
+                "currency": data.get("currency", "USD"),
+                "line_items_count": data.get("line_items_count", 3),
+                "tax_rate": data.get("tax_rate", 20),
+            }
+            invoice_refs.append(create_invoice_pdf(invoice_data))
+        response["invoices"] = invoice_refs
+
+    return jsonify(response)
 
 def cleanup_old_files():
-    """Cleanup files older than 1 hour"""
+    """Cleanup files older than 30 minutes"""
     current_time = time.time()
     for filename in os.listdir(FILES_DIR):
         filepath = os.path.join(FILES_DIR, filename)
