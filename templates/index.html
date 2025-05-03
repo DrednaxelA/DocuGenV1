@@ -173,7 +173,7 @@
       .download-link {
         color: #ff6b00;
         text-decoration: none;
-        display: inline-block;
+        display: block;
         margin: 5px 0;
       }
       .download-link:hover {
@@ -251,7 +251,16 @@
     </div>
 
     <div class="form-group" id="currencyGroup">
-      <label>Currency:</label>
+      <label>
+        Currency:
+        <span class="tooltip"
+          >ℹ
+          <span class="tooltiptext">
+            GBP → UK dates (DD/MM/YYYY)<br />
+            USD → US dates (MM/DD/YYYY)
+          </span>
+        </span>
+      </label>
       <div class="input-group">
         <select id="currency">
           <option value="GBP">GBP</option>
@@ -269,7 +278,7 @@
           <option value="10">10%</option>
           <option value="15">15%</option>
           <option value="20">20%</option>
-          <option value="25">25%</option>
+          <option value="20" selected>20%</option>
         </select>
       </div>
     </div>
@@ -353,6 +362,32 @@
         width: 40px;
         height: 40px;
         animation: spin 1s linear infinite;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+      }
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 160px;
+        background: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
       }
 
       @keyframes spin {
