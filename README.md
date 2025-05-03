@@ -62,9 +62,7 @@ DocuGenV1/
 ## 📄 License
 MIT License. Use freely, contribute openly.
 
-
-## 
-_This README reflects the current state of an evolving project. Contributions and ideas are welcome!
+  _This README reflects the current state of an evolving project. Contributions and ideas are welcome!
 _
 
 
