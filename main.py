@@ -157,7 +157,7 @@ def generate_supplier_statement(data):
     pdf.cell(0, 10, "Supplier Statement", ln=True)
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 8, f"Supplier: {supplier}", ln=True)
-    pdf.cell(0, 8, f"Period: {from_str}  –  {to_str}", ln=True)
+    pdf.cell(0,  8, f"Period: {from_str} - {to_str}",  ln=True)
     pdf.ln(5)
 
     pdf.set_font("Arial", "B", 12)
