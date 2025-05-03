@@ -36,7 +36,7 @@ def format_date_for_pdf(iso_date: str, currency: str) -> str:
         dt = datetime.strptime(iso_date, "%Y-%m-%d")
     except Exception:
         return iso_date
-    return dt.strftime("%m/%d/%Y") if currency == "USD" else dt.strftime("%d/%m/%Y")
+    return dt.strftime("%m/%d/%Y") if currency.upper() == "USD" else dt.strftime("%d/%m/%Y")
 
 @app.route("/")
 def index():
@@ -161,8 +161,14 @@ def generate_supplier_statement(data):
     total_statement = 0.0
 
     # Generate and list each supporting invoice
+        # Generate and list each supporting invoice
     invoice_refs = []
-    for i in range(int(data.get("number_of_lines", 0))):
+    try:
+        num_lines = int(data.get("number_of_lines") or 0)
+    except ValueError:
+        num_lines = 0
+
+    for i in range(num_lines):
         inv_data = {
             "document_type":   "invoice",
             "supplier_name":   supplier,
