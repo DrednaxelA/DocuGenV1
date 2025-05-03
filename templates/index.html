@@ -538,81 +538,96 @@
       }
 
       async function generateDocument() {
-        if (!validateForm()) {
-          alert("Fill all required");
-          return;
-        }
-        const btn = document.getElementById("generateBtn");
-        btn.disabled = true;
-        btn.textContent = "Generating...";
-        document.getElementById("spinner").style.display = "block";
-        const payload = {
-          document_type: document.getElementById("documentType").value,
-          date: dateISO,
-          due_date: dueISO,
-          date_from: fromISO,
-          date_to: toISO,
-          supplier_name: document.getElementById("supplierName").value,
-          customer_name: document.getElementById("customerName").value,
-          document_ref: document.getElementById("documentRef").value,
-          currency: document.getElementById("currency").value,
-          tax_rate: parseFloat(document.getElementById("taxRate").value),
-          line_items_count: parseInt(
-            document.getElementById("lineItemsCount").value
-          ),
-          count: parseInt(document.getElementById("count").value),
-          total_amount: parseFloat(
-            document.getElementById("totalAmount").value
-          ),
-          number_of_lines: parseInt(
-            document.getElementById("linesCount").value
-          ),
-          generate_invoices:
-            document.getElementById("generateInvoices").checked,
-        };
-        try {
-          const res = await fetch("/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          const result = await res.json();
-          const rd = document.getElementById("result");
-          rd.innerHTML = "";
-          const files = Array.isArray(result.file)
-            ? result.file
-            : [result.file];
-          files.forEach((f) => {
-            const a = document.createElement("a");
-            a.href = f.url;
-            a.textContent = `Download ${f.name}`;
-            a.className = "download-link";
-            a.target = "_blank";
-            rd.appendChild(a);
-          });
-          if (result.invoices) {
-            const h = document.createElement("h4");
-            h.textContent = "Supporting Invoices:";
-            rd.appendChild(h);
-            result.invoices.forEach((inv) => {
-              const a = document.createElement("a");
-              a.href = inv.url;
-              a.textContent = `Download ${inv.name}`;
-              a.className = "download-link";
-              a.target = "_blank";
-              rd.appendChild(a);
-            });
-          }
-        } catch (e) {
-          document.getElementById("result").innerText =
-            "Error generating document";
-          console.error(e);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Generate Document";
-          document.getElementById("spinner").style.display = "none";
-        }
+    if (!validateForm()) {
+      alert("Fill all required");
+      return;
+    }
+
+    const btn = document.getElementById("generateBtn");
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+    document.getElementById("spinner").style.display = "block";
+
+    const docType = document.getElementById("documentType").value;
+    let payload;
+
+    if (docType === "supplier_statement") {
+      // minimal payload for statements
+      payload = {
+        document_type: docType,
+        date_from:    fromISO,
+        date_to:      toISO,
+        supplier_name: document.getElementById("supplierName").value,
+        currency:      document.getElementById("currency").value,
+        tax_rate:      parseFloat(document.getElementById("taxRate").value),
+        total_amount:  parseFloat(document.getElementById("totalAmount").value),
+        number_of_lines: parseInt(document.getElementById("linesCount").value, 10),
+        generate_invoices: document.getElementById("generateInvoices").checked
+      };
+    } else {
+      // everything else uses the full invoice/receipt payload
+      payload = {
+        document_type:    docType,
+        date:             dateISO,
+        due_date:         dueISO,
+        date_from:        fromISO,
+        date_to:          toISO,
+        supplier_name:    document.getElementById("supplierName").value,
+        customer_name:    document.getElementById("customerName").value,
+        document_ref:     document.getElementById("documentRef").value,
+        currency:         document.getElementById("currency").value,
+        tax_rate:         parseFloat(document.getElementById("taxRate").value),
+        line_items_count: parseInt(document.getElementById("lineItemsCount").value, 10),
+        count:            parseInt(document.getElementById("count").value, 10),
+        total_amount:     parseFloat(document.getElementById("totalAmount").value),
+        number_of_lines:  parseInt(document.getElementById("linesCount").value, 10),
+        generate_invoices: document.getElementById("generateInvoices").checked
+      };
+    }
+
+    try {
+      const res = await fetch("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      const rd = document.getElementById("result");
+      rd.innerHTML = "";
+
+      const files = Array.isArray(result.file) ? result.file : [result.file];
+      files.forEach((f) => {
+        const a = document.createElement("a");
+        a.href = f.url;
+        a.textContent = `Download ${f.name}`;
+        a.className = "download-link";
+        a.target = "_blank";
+        rd.appendChild(a);
+      });
+
+      if (result.invoices) {
+        const h = document.createElement("h4");
+        h.textContent = "Supporting Invoices:";
+        rd.appendChild(h);
+        result.invoices.forEach((inv) => {
+          const a = document.createElement("a");
+          a.href = inv.url;
+          a.textContent = `Download ${inv.name}`;
+          a.className = "download-link";
+          a.target = "_blank";
+          rd.appendChild(a);
+        });
       }
+    } catch (e) {
+      document.getElementById("result").innerText = "Error generating document";
+      console.error(e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Generate Document";
+      document.getElementById("spinner").style.display = "none";
+    }
+  }
     </script>
   </body>
 </html>
