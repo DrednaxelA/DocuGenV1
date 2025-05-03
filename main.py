@@ -171,7 +171,8 @@ def generate_supplier_statement(data):
     total_statement = 0.0
 
     invoice_refs = []
-    num_lines = safe_int(data.get("number_of_lines"), 0)
+    num_lines = safe_int(data.get("number_of_lines"), 0) \
+        or safe_int(data.get("line_items_count"), 0)
 
     for i in range(num_lines):
      inv_data = {
