@@ -160,7 +160,6 @@ def generate_supplier_statement(data):
     pdf.set_font("Arial", "", 12)
     total_statement = 0.0
 
-    # Generate and list each supporting invoice
         # Generate and list each supporting invoice
     invoice_refs = []
     try:
@@ -173,30 +172,36 @@ def generate_supplier_statement(data):
             "document_type":   "invoice",
             "supplier_name":   supplier,
             "customer_name":   data.get("customer_name", "Beta LLC"),
-            "date":            date_from_iso,        # Use period start as invoice date
-            "due_date":        data.get("due_date",""),
+            "date":            date_from_iso,
+            "due_date":        data.get("due_date", ""),
             "currency":        currency,
             "line_items_count": data.get("line_items_count", 3),
             "total_amount":     data.get("total_amount", 0),
             "tax_rate":         tax_rate
         }
-        inv = create_invoice_pdf(inv_data)
-        invoice_refs.append(inv)
+
+        if make_invs:
+            inv = create_invoice_pdf(inv_data)
+            invoice_refs.append(inv)
+            inv_name = inv["name"]
+        else:
+            # Generate a placeholder invoice name to show in the table
+            inv_name = f"INV-{uuid.uuid4().hex[:6]}"
 
         # Break out gross → net/tax
         gross = float(inv_data["total_amount"])
-        net   = gross / (1 + tax_rate/100)
+        net   = gross / (1 + tax_rate / 100)
         tax   = gross - net
 
-        # Add row to statement table
         date_str = format_date_for_pdf(inv_data["date"], currency)
-        pdf.cell(40, 8, inv["name"], 1)
+        pdf.cell(40, 8, inv_name, 1)
         pdf.cell(40, 8, date_str, 1)
         pdf.cell(40, 8, f"{currency} {net:.2f}", 1, align="R")
         pdf.cell(40, 8, f"{currency} {tax:.2f}", 1, align="R")
         pdf.cell(40, 8, f"{currency} {gross:.2f}", 1, ln=True, align="R")
 
         total_statement += gross
+
 
     # Statement total
     pdf.ln(5)
