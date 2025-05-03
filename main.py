@@ -105,11 +105,15 @@ def create_invoice_pdf(data):
         pdf.cell(40, 10, f"{currency} {amount:.2f}", 1, ln=True)
     pdf.ln(10)
 
-    pdf.cell(0, 10, f"Net Amount: {currency} {total_net:.2f}", ln=True)
+        # Now invert the form’s Total (gross) to compute Net and Tax
+    gross = total_amount  # the form’s “Total Amount”
+    net = gross / (1 + tax_rate/100)
+    tax_amt = gross - net
+
+    pdf.cell(0, 10, f"Net Amount: {currency} {net:.2f}", ln=True)
     pdf.cell(0, 10, f"Tax Rate: {tax_rate}%", ln=True)
-    tax_amount = total_net * (tax_rate / 100)
-    pdf.cell(0, 10, f"Tax Amount: {currency} {tax_amount:.2f}", ln=True)
-    pdf.cell(0, 10, f"Total: {currency} {total_net + tax_amount:.2f}", ln=True)
+    pdf.cell(0, 10, f"Tax Amount: {currency} {tax_amt:.2f}", ln=True)
+    pdf.cell(0, 10, f"Total: {currency} {gross:.2f}", ln=True)
 
     pdf.output(filepath)
     return {"name": filename, "url": f"/files/{filename}"}
