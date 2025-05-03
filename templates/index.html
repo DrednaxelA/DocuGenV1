@@ -404,36 +404,61 @@
         toISO = "",
         dueISO = "";
 
-      document.addEventListener("DOMContentLoaded", () => {
-        randomizeDocRef();
-        updateVisibility();
-        renderDates();
-        document
-          .getElementById("documentType")
-          .addEventListener("change", () => {
-            updateVisibility();
-            renderDates();
-          });
-        document
-          .getElementById("datePicker")
-          .addEventListener("change", (e) => {
-            dateISO = e.target.value;
-            renderDates();
-          });
-        document.getElementById("duePicker").addEventListener("change", (e) => {
-          dueISO = e.target.value;
-          renderDates();
-        });
-        document.getElementById("dateFrom").addEventListener("change", (e) => {
-          fromISO = e.target.value;
-        });
-        document.getElementById("dateTo").addEventListener("change", (e) => {
-          toISO = e.target.value;
-        });
-        document
-          .getElementById("currency")
-          .addEventListener("change", renderDates);
-      });
+        document.addEventListener("DOMContentLoaded", () => {
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Initialize the “from”/“to” ISO dates on load
+  fromISO = document.getElementById("dateFrom").value;
+  toISO   = document.getElementById("dateTo").value;
+  // ──────────────────────────────────────────────────────────────────────────────
+
+  randomizeDocRef();
+  updateVisibility();
+  renderDates();
+
+  document
+    .getElementById("documentType")
+    .addEventListener("change", () => {
+      updateVisibility();
+      renderDates();
+    });
+
+  document
+    .getElementById("datePicker")
+    .addEventListener("change", (e) => {
+      dateISO = e.target.value;
+      renderDates();
+    });
+
+  document
+    .getElementById("duePicker")
+    .addEventListener("change", (e) => {
+      dueISO = e.target.value;
+      renderDates();
+    });
+
+  document
+    .getElementById("dateFrom")
+    .addEventListener("change", (e) => {
+      fromISO = e.target.value;
+    });
+
+  document
+    .getElementById("dateTo")
+    .addEventListener("change", (e) => {
+      toISO = e.target.value;
+    });
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Update both formatting and ISO values whenever currency changes
+  document
+    .getElementById("currency")
+    .addEventListener("change", () => {
+      renderDates();
+      fromISO = document.getElementById("dateFrom").value;
+      toISO   = document.getElementById("dateTo").value;
+    });
+  // ──────────────────────────────────────────────────────────────────────────────
+});
 
       function updateVisibility() {
         const t = document.getElementById("documentType").value;

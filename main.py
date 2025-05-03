@@ -145,6 +145,9 @@ def generate_supplier_statement(data):
     tax_rate      = safe_float(data.get("tax_rate"), 20)
     make_invs     = data.get("generate_invoices", False)
 
+    if data.get("number_of_lines") is not None:
+        data["line_items_count"] = data["number_of_lines"]
+
     from_str = format_date_for_pdf(date_from_iso, currency)
     to_str   = format_date_for_pdf(date_to_iso, currency)
 
