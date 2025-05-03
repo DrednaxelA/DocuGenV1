@@ -127,46 +127,89 @@ def serve_file(filename):
     return send_from_directory(FILES_DIR, safe_name, as_attachment=True)
 
 def generate_supplier_statement(data):
+    # Extract and sanitize inputs
     supplier = data.get("supplier_name", "Acme Corp")
-    date_iso = data.get("date", datetime.today().strftime("%Y-%m-%d"))
-    date_str = format_date_for_pdf(date_iso, data.get("currency", "USD"))
-    lines = int(data.get("number_of_lines", 0))
-    make_invs = data.get("generate_invoices", False)
+    date_from_iso = data.get("date_from", datetime.today().strftime("%Y-%m-%d"))
+    date_to_iso   = data.get("date_to",   datetime.today().strftime("%Y-%m-%d"))
+    currency      = data.get("currency",  "USD")
+    tax_rate      = float(data.get("tax_rate", 20))
+    make_invs     = data.get("generate_invoices", False)
 
+    # Format range for PDF header
+    from_str = format_date_for_pdf(date_from_iso, currency)
+    to_str   = format_date_for_pdf(date_to_iso,   currency)
+
+    # Create PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, "Supplier Statement", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Supplier: {supplier}", ln=True)
-    pdf.cell(0, 10, f"Date: {date_str}", ln=True)
-    pdf.cell(0, 10, f"Number of Lines: {lines}", ln=True)
-    pdf.ln(10)
+    pdf.cell(0, 8, f"Supplier: {supplier}", ln=True)
+    pdf.cell(0, 8, f"Period: {from_str}  –  {to_str}", ln=True)
+    pdf.ln(5)
 
+    # Table header
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(40, 8, "Invoice No", 1)
+    pdf.cell(40, 8, "Date", 1)
+    pdf.cell(40, 8, "Net", 1, align="R")
+    pdf.cell(40, 8, "Tax", 1, align="R")
+    pdf.cell(40, 8, "Total", 1, ln=True, align="R")
+
+    pdf.set_font("Arial", "", 12)
+    total_statement = 0.0
+
+    # Generate and list each supporting invoice
     invoice_refs = []
-    for i in range(lines):
+    for i in range(int(data.get("number_of_lines", 0))):
         inv_data = {
-            "document_type": "invoice",
-            "supplier_name": supplier,
-            "customer_name": data.get("customer_name", "Beta LLC"),
-            "date": date_iso,
-            "due_date": data.get("due_date", ""),
-            "currency": data.get("currency", "USD"),
+            "document_type":   "invoice",
+            "supplier_name":   supplier,
+            "customer_name":   data.get("customer_name", "Beta LLC"),
+            "date":            date_from_iso,        # Use period start as invoice date
+            "due_date":        data.get("due_date",""),
+            "currency":        currency,
             "line_items_count": data.get("line_items_count", 3),
-            "total_amount": data.get("total_amount", 0),
-            "tax_rate": data.get("tax_rate", 20)
+            "total_amount":     data.get("total_amount", 0),
+            "tax_rate":         tax_rate
         }
         inv = create_invoice_pdf(inv_data)
         invoice_refs.append(inv)
-        pdf.cell(0, 10, f"Invoice: {inv['name']}", ln=True)
 
+        # Break out gross → net/tax
+        gross = float(inv_data["total_amount"])
+        net   = gross / (1 + tax_rate/100)
+        tax   = gross - net
+
+        # Add row to statement table
+        date_str = format_date_for_pdf(inv_data["date"], currency)
+        pdf.cell(40, 8, inv["name"], 1)
+        pdf.cell(40, 8, date_str, 1)
+        pdf.cell(40, 8, f"{currency} {net:.2f}", 1, align="R")
+        pdf.cell(40, 8, f"{currency} {tax:.2f}", 1, align="R")
+        pdf.cell(40, 8, f"{currency} {gross:.2f}", 1, ln=True, align="R")
+
+        total_statement += gross
+
+    # Statement total
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(160, 8, "Total Due:", 1)
+    pdf.cell(40, 8, f"{currency} {total_statement:.2f}", 1, ln=True, align="R")
+
+    # Save PDF
     statement_filename = f"Supplier_Statement_{uuid.uuid4().hex[:8]}.pdf"
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    resp = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
+    # Build JSON response
+    resp = {
+        "file": {"name": statement_filename, "url": f"/files/{statement_filename}"}
+    }
     if make_invs:
         resp["invoices"] = invoice_refs
+
     return jsonify(resp)
 
 def cleanup_old_files():
