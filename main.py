@@ -5,6 +5,8 @@ import os
 import uuid
 import time
 import random
+from datetime import datetime
+from werkzeug.utils import secure_filename
 
 product_descriptions = [
     "Premium Leather Office Chair",
@@ -29,6 +31,13 @@ CORS(app)
 FILES_DIR = "files"
 os.makedirs(FILES_DIR, exist_ok=True)
 
+def format_date_for_pdf(iso_date: str, currency: str) -> str:
+    try:
+        dt = datetime.strptime(iso_date, "%Y-%m-%d")
+    except Exception:
+        return iso_date
+    return dt.strftime("%m/%d/%Y") if currency == "USD" else dt.strftime("%d/%m/%Y")
+
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -43,10 +52,7 @@ def generate_pdf():
         return generate_supplier_statement(data)
 
     count = int(data.get("count", 1))
-    filenames = []
-    for _ in range(count):
-        filenames.append(create_invoice_pdf(data))
-
+    filenames = [create_invoice_pdf(data) for _ in range(count)]
     return jsonify({"file": filenames[0] if count == 1 else filenames})
 
 def create_invoice_pdf(data):
@@ -54,11 +60,16 @@ def create_invoice_pdf(data):
     currency = data.get("currency", "USD")
     supplier = data.get("supplier_name", "Acme Corp")
     customer = data.get("customer_name", "Beta LLC")
-    document_ref = data.get("document_ref", f"INV-{uuid.uuid4().hex[:8]}")
-    date = data.get("date", "2025-04-30")
-    due_date = data.get("due_date", "")
+    document_ref = data.get("document_ref") or f"INV-{uuid.uuid4().hex[:8]}"
+    date_iso = data.get("date", datetime.today().strftime("%Y-%m-%d"))
+    due_date_iso = data.get("due_date", "")
     line_items_count = int(data.get("line_items_count", 3))
+    total_amount = float(data.get("total_amount", 0))
     tax_rate = float(data.get("tax_rate", 20))
+
+    date_str = format_date_for_pdf(date_iso, currency)
+    due_str = format_date_for_pdf(due_date_iso, currency) if due_date_iso else None
+    unit_price = (total_amount / line_items_count) if line_items_count > 0 else 0
 
     filename = f"{doc_type.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
     filepath = os.path.join(FILES_DIR, filename)
@@ -70,55 +81,51 @@ def create_invoice_pdf(data):
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, f"Document Reference: {document_ref}", ln=True)
     pdf.cell(0, 10, f"Supplier: {supplier}", ln=True)
-    pdf.cell(0, 10, f"Customer: {customer}", ln=True)
-    pdf.cell(0, 10, f"Date: {date}", ln=True)
-    if due_date:
-        pdf.cell(0, 10, f"Due Date: {due_date}", ln=True)
+    if doc_type != "Pos Receipt":
+        pdf.cell(0, 10, f"Customer: {customer}", ln=True)
+    pdf.cell(0, 10, f"Date: {date_str}", ln=True)
+    if due_str and doc_type != "Pos Receipt":
+        pdf.cell(0, 10, f"Due Date: {due_str}", ln=True)
     pdf.ln(10)
 
-    # Line Items
-    total_float = 0
+    total_net = 0
     pdf.set_font("Arial", "B", 12)
     pdf.cell(80, 10, "Description", 1)
-    pdf.cell(30, 10, "Quantity", 1)
+    pdf.cell(30, 10, "Qty", 1)
     pdf.cell(40, 10, "Unit Price", 1)
     pdf.cell(40, 10, "Amount", 1, ln=True)
 
     pdf.set_font("Arial", "", 12)
     for _ in range(line_items_count):
-        quantity = float(data.get("quantity", round(random.uniform(1, 10))))
-        unit_price = float(data.get("unit_price", round(random.uniform(10, 1000), 2)))
-        amount = quantity * unit_price
-        total_float += amount
+        amount = unit_price
+        total_net += amount
         pdf.cell(80, 10, random.choice(product_descriptions), 1)
-        pdf.cell(30, 10, f"{quantity:.0f}", 1)
+        pdf.cell(30, 10, "1", 1)
         pdf.cell(40, 10, f"{currency} {unit_price:.2f}", 1)
         pdf.cell(40, 10, f"{currency} {amount:.2f}", 1, ln=True)
     pdf.ln(10)
 
-    tax_amount = total_float * (tax_rate / 100)
-    grand_total = total_float + tax_amount
-    pdf.cell(0, 10, f"Subtotal: {currency} {total_float:.2f}", ln=True)
+    pdf.cell(0, 10, f"Net Amount: {currency} {total_net:.2f}", ln=True)
     pdf.cell(0, 10, f"Tax Rate: {tax_rate}%", ln=True)
+    tax_amount = total_net * (tax_rate / 100)
     pdf.cell(0, 10, f"Tax Amount: {currency} {tax_amount:.2f}", ln=True)
-    pdf.cell(0, 10, f"Total: {currency} {grand_total:.2f}", ln=True)
+    pdf.cell(0, 10, f"Total: {currency} {total_net + tax_amount:.2f}", ln=True)
 
     pdf.output(filepath)
     return {"name": filename, "url": f"/files/{filename}"}
 
 @app.route("/files/<filename>")
 def serve_file(filename):
-    if '..' in filename or filename.startswith('/'):
-        return {"error": "Invalid filename"}, 400
-    filepath = os.path.join(FILES_DIR, filename)
+    safe_name = secure_filename(filename)
+    filepath = os.path.join(FILES_DIR, safe_name)
     if not os.path.exists(filepath):
         return {"error": "File not found"}, 404
-    return send_from_directory(FILES_DIR, filename, as_attachment=True)
+    return send_from_directory(FILES_DIR, safe_name, as_attachment=True)
 
 def generate_supplier_statement(data):
     supplier = data.get("supplier_name", "Acme Corp")
-    date = data.get("date", "2025-04-30")
-    total = data.get("total_amount", "")
+    date_iso = data.get("date", datetime.today().strftime("%Y-%m-%d"))
+    date_str = format_date_for_pdf(date_iso, data.get("currency", "USD"))
     lines = int(data.get("number_of_lines", 0))
     make_invs = data.get("generate_invoices", False)
 
@@ -128,41 +135,43 @@ def generate_supplier_statement(data):
     pdf.cell(0, 10, "Supplier Statement", ln=True)
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, f"Supplier: {supplier}", ln=True)
-    pdf.cell(0, 10, f"Date: {date}", ln=True)
-    pdf.cell(0, 10, f"Total Amount: {total}", ln=True)
+    pdf.cell(0, 10, f"Date: {date_str}", ln=True)
     pdf.cell(0, 10, f"Number of Lines: {lines}", ln=True)
+    pdf.ln(10)
+
+    invoice_refs = []
+    for i in range(lines):
+        inv_data = {
+            "document_type": "invoice",
+            "supplier_name": supplier,
+            "customer_name": data.get("customer_name", "Beta LLC"),
+            "date": date_iso,
+            "due_date": data.get("due_date", ""),
+            "currency": data.get("currency", "USD"),
+            "line_items_count": data.get("line_items_count", 3),
+            "total_amount": data.get("total_amount", 0),
+            "tax_rate": data.get("tax_rate", 20)
+        }
+        inv = create_invoice_pdf(inv_data)
+        invoice_refs.append(inv)
+        pdf.cell(0, 10, f"Invoice: {inv['name']}", ln=True)
 
     statement_filename = f"Supplier_Statement_{uuid.uuid4().hex[:8]}.pdf"
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    response = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
-
+    resp = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
     if make_invs:
-        invoice_refs = []
-        for _ in range(lines):
-            invoice_data = {
-                "document_type": "invoice",
-                "supplier_name": supplier,
-                "customer_name": data.get("customer_name", "Beta LLC"),
-                "date": date,
-                "currency": data.get("currency", "USD"),
-                "line_items_count": data.get("line_items_count", 3),
-                "tax_rate": data.get("tax_rate", 20),
-            }
-            invoice_refs.append(create_invoice_pdf(invoice_data))
-        response["invoices"] = invoice_refs
-
-    return jsonify(response)
+        resp["invoices"] = invoice_refs
+    return jsonify(resp)
 
 def cleanup_old_files():
-    """Cleanup files older than 30 minutes"""
-    current_time = time.time()
-    for filename in os.listdir(FILES_DIR):
-        filepath = os.path.join(FILES_DIR, filename)
-        if current_time - os.path.getmtime(filepath) > 1800:
+    now = time.time()
+    for f in os.listdir(FILES_DIR):
+        path = os.path.join(FILES_DIR, f)
+        if now - os.path.getmtime(path) > 1800:
             try:
-                os.remove(filepath)
+                os.remove(path)
             except OSError:
                 pass
 
