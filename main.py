@@ -31,6 +31,7 @@ CORS(app)
 FILES_DIR = "files"
 os.makedirs(FILES_DIR, exist_ok=True)
 
+
 def format_date_for_pdf(iso_date: str, currency: str) -> str:
     try:
         dt = datetime.strptime(iso_date, "%Y-%m-%d")
@@ -39,11 +40,13 @@ def format_date_for_pdf(iso_date: str, currency: str) -> str:
     # USD → MM/DD/YYYY; others → DD/MM/YYYY
     return dt.strftime("%m/%d/%Y") if currency.upper() == "USD" else dt.strftime("%d/%m/%Y")
 
+
 def safe_float(val, fallback=0.0):
     try:
         return float(val)
     except (TypeError, ValueError):
         return fallback
+
 
 def safe_int(val, fallback=0):
     try:
@@ -51,9 +54,11 @@ def safe_int(val, fallback=0):
     except (TypeError, ValueError):
         return fallback
 
+
 @app.route("/")
 def index():
     return render_template('index.html')
+
 
 @app.route("/generate", methods=["POST"])
 def generate_pdf():
@@ -68,6 +73,7 @@ def generate_pdf():
     filenames = [create_invoice_pdf(data) for _ in range(count)]
     return jsonify({"file": filenames[0] if count == 1 else filenames})
 
+
 def create_invoice_pdf(data):
     doc_type = data.get("document_type", "Invoice").replace("_", " ").title()
     currency = data.get("currency", "USD")
@@ -81,8 +87,10 @@ def create_invoice_pdf(data):
     tax_rate = safe_float(data.get("tax_rate"), 20)
 
     date_str = format_date_for_pdf(date_iso, currency)
-    due_str = format_date_for_pdf(due_date_iso, currency) if due_date_iso else None
-    unit_price = (total_amount / line_items_count) if line_items_count > 0 else 0
+    due_str = format_date_for_pdf(
+        due_date_iso, currency) if due_date_iso else None
+    unit_price = (
+        total_amount / line_items_count) if line_items_count > 0 else 0
 
     filename = f"{doc_type.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
     filepath = os.path.join(FILES_DIR, filename)
@@ -135,6 +143,7 @@ def create_invoice_pdf(data):
         "document_ref": document_ref
     }
 
+
 @app.route("/files/<filename>")
 def serve_file(filename):
     safe_name = secure_filename(filename)
@@ -143,20 +152,22 @@ def serve_file(filename):
         return {"error": "File not found"}, 404
     return send_from_directory(FILES_DIR, safe_name, as_attachment=True)
 
+
 def generate_supplier_statement(data):
     supplier = data.get("supplier_name", "Acme Corp")
-    date_from_iso = data.get("date_from") or datetime.today().strftime("%Y-%m-%d")
-    date_to_iso   = data.get("date_to")   or datetime.today().strftime("%Y-%m-%d")
-    currency      = data.get("currency",  "USD")
-    tax_rate      = safe_float(data.get("tax_rate"), 20)
-    make_invs     = data.get("generate_invoices", False)
+    date_from_iso = data.get(
+        "date_from") or datetime.today().strftime("%Y-%m-%d")
+    date_to_iso = data.get("date_to") or datetime.today().strftime("%Y-%m-%d")
+    currency = data.get("currency",  "USD")
+    tax_rate = safe_float(data.get("tax_rate"), 20)
+    make_invs = data.get("generate_invoices", False)
 
     # Remap number_of_lines -> line_items_count for consistency
     if data.get("number_of_lines") is not None:
         data["line_items_count"] = data["number_of_lines"]
 
     from_str = format_date_for_pdf(date_from_iso, currency)
-    to_str   = format_date_for_pdf(date_to_iso, currency)
+    to_str = format_date_for_pdf(date_to_iso, currency)
 
     pdf = FPDF()
     pdf.add_page()
@@ -179,24 +190,25 @@ def generate_supplier_statement(data):
     pdf.set_font("Arial", "", 12)
     total_statement = 0.0
     invoice_refs = []
-    num_lines = safe_int(data.get("number_of_lines"), 0) or safe_int(data.get("line_items_count"), 0)
+    num_lines = safe_int(data.get("number_of_lines"), 0) or safe_int(
+        data.get("line_items_count"), 0)
 
     for i in range(num_lines):
         # Generate a unique invoice reference and include it
         inv_ref = f"INV-{uuid.uuid4().hex[:6]}"
         # Build each invoice’s data
         inv_data = {
-             "document_type": "invoice",
-             "supplier_name": supplier,
-             "customer_name": data.get("customer_name") or "Beta LLC",
-             "document_ref": inv_ref,
-             "date": date_from_iso,
-             "due_date": data.get("due_date") or date_to_iso,
-             "currency": currency,
-             "line_items_count": safe_int(data.get("line_items_count"), 3),
-             "total_amount": safe_float(data.get("total_amount"), 0),
-             "tax_rate": tax_rate
-         }
+            "document_type": "invoice",
+            "supplier_name": supplier,
+            "customer_name": data.get("customer_name") or "Beta LLC",
+            "document_ref": inv_ref,
+            "date": date_from_iso,
+            "due_date": data.get("due_date") or date_to_iso,
+            "currency": currency,
+            "line_items_count": safe_int(data.get("line_items_count"), 3),
+            "total_amount": safe_float(data.get("total_amount"), 0),
+            "tax_rate": tax_rate
+        }
 
         # Optionally generate and collect supporting invoices
         # inv_name = f"INV-{uuid.uuid4().hex[:6]}" leaving this just in case, that's how it used to be
@@ -211,8 +223,8 @@ def generate_supplier_statement(data):
                 app.logger.error(f"Failed to generate invoice #{i}: {e}")
 
         # Always draw the row and accumulate total
-        gross   = inv_data["total_amount"]
-        net     = gross / (1 + tax_rate/100)
+        gross = inv_data["total_amount"]
+        net = gross / (1 + tax_rate/100)
         tax_amt = gross - net
         date_str = format_date_for_pdf(inv_data["date"], currency)
 
@@ -235,10 +247,12 @@ def generate_supplier_statement(data):
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    response = {"file": {"name": statement_filename, "url": f"/files/{statement_filename}"}}
+    response = {"file": {"name": statement_filename,
+                         "url": f"/files/{statement_filename}"}}
     if make_invs:
         response["invoices"] = invoice_refs
     return jsonify(response)
+
 
 def cleanup_old_files():
     now = time.time()
@@ -249,6 +263,7 @@ def cleanup_old_files():
                 os.remove(path)
             except OSError:
                 pass
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
