@@ -189,7 +189,7 @@ def generate_supplier_statement(data):
              "document_type": "invoice",
              "supplier_name": supplier,
              "customer_name": data.get("customer_name") or "Beta LLC",
-            "document_ref": inv_ref,
+             "document_ref": inv_ref,
              "date": date_from_iso,
              "due_date": data.get("due_date") or date_to_iso,
              "currency": currency,
@@ -199,12 +199,14 @@ def generate_supplier_statement(data):
          }
 
         # Optionally generate and collect supporting invoices
-        inv_name = f"INV-{uuid.uuid4().hex[:6]}"
+        #inv_name = f"INV-{uuid.uuid4().hex[:6]}" leaving this just in case, that's how it used to be
+        inv_name = inv_ref
         if make_invs:
             try:
                 inv = create_invoice_pdf(inv_data)
                 invoice_refs.append(inv)
-                inv_name = inv["name"]
+                # Ensure we use the same reference the PDF used:
+                inv_name = inv["document_ref"]
             except Exception as e:
                 app.logger.error(f"Failed to generate invoice #{i}: {e}")
 
