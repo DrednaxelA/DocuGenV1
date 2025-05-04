@@ -23,7 +23,7 @@ product_descriptions = [
     "Wireless Gaming Mouse",
     "Smart Power Strip",
     "Mini Air Purifier",
-    "Desk Cable Management Kit"
+    "Desk Cable Management Kit",
 ]
 
 app = Flask(__name__)
@@ -38,7 +38,11 @@ def format_date_for_pdf(iso_date: str, currency: str) -> str:
     except Exception:
         return iso_date
     # USD → MM/DD/YYYY; others → DD/MM/YYYY
-    return dt.strftime("%m/%d/%Y") if currency.upper() == "USD" else dt.strftime("%d/%m/%Y")
+    return (
+        dt.strftime("%m/%d/%Y")
+        if currency.upper() == "USD"
+        else dt.strftime("%d/%m/%Y")
+    )
 
 
 def safe_float(val, fallback=0.0):
@@ -57,7 +61,7 @@ def safe_int(val, fallback=0):
 
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @app.route("/generate", methods=["POST"])
@@ -87,10 +91,8 @@ def create_invoice_pdf(data):
     tax_rate = safe_float(data.get("tax_rate"), 20)
 
     date_str = format_date_for_pdf(date_iso, currency)
-    due_str = format_date_for_pdf(
-        due_date_iso, currency) if due_date_iso else None
-    unit_price = (
-        total_amount / line_items_count) if line_items_count > 0 else 0
+    due_str = format_date_for_pdf(due_date_iso, currency) if due_date_iso else None
+    unit_price = (total_amount / line_items_count) if line_items_count > 0 else 0
 
     filename = f"{doc_type.replace(' ', '_')}_{uuid.uuid4().hex[:8]}.pdf"
     filepath = os.path.join(FILES_DIR, filename)
@@ -127,7 +129,7 @@ def create_invoice_pdf(data):
     pdf.ln(10)
 
     gross = total_amount
-    net = gross / (1 + tax_rate/100)
+    net = gross / (1 + tax_rate / 100)
     tax_amt = gross - net
 
     pdf.cell(0, 10, f"Net Amount: {currency} {net:.2f}", ln=True)
@@ -137,11 +139,7 @@ def create_invoice_pdf(data):
 
     pdf.output(filepath)
     # Return the document_ref along with name and url
-    return {
-        "name": filename,
-        "url": f"/files/{filename}",
-        "document_ref": document_ref
-    }
+    return {"name": filename, "url": f"/files/{filename}", "document_ref": document_ref}
 
 
 @app.route("/files/<filename>")
@@ -155,10 +153,9 @@ def serve_file(filename):
 
 def generate_supplier_statement(data):
     supplier = data.get("supplier_name", "Acme Corp")
-    date_from_iso = data.get(
-        "date_from") or datetime.today().strftime("%Y-%m-%d")
+    date_from_iso = data.get("date_from") or datetime.today().strftime("%Y-%m-%d")
     date_to_iso = data.get("date_to") or datetime.today().strftime("%Y-%m-%d")
-    currency = data.get("currency",  "USD")
+    currency = data.get("currency", "USD")
     tax_rate = safe_float(data.get("tax_rate"), 20)
     make_invs = data.get("generate_invoices", False)
 
@@ -191,7 +188,8 @@ def generate_supplier_statement(data):
     total_statement = 0.0
     invoice_refs = []
     num_lines = safe_int(data.get("number_of_lines"), 0) or safe_int(
-        data.get("line_items_count"), 0)
+        data.get("line_items_count"), 0
+    )
 
     for i in range(num_lines):
         # Generate a unique invoice reference and include it
@@ -207,7 +205,7 @@ def generate_supplier_statement(data):
             "currency": currency,
             "line_items_count": safe_int(data.get("line_items_count"), 3),
             "total_amount": safe_float(data.get("total_amount"), 0),
-            "tax_rate": tax_rate
+            "tax_rate": tax_rate,
         }
 
         # Optionally generate and collect supporting invoices
@@ -224,7 +222,7 @@ def generate_supplier_statement(data):
 
         # Always draw the row and accumulate total
         gross = inv_data["total_amount"]
-        net = gross / (1 + tax_rate/100)
+        net = gross / (1 + tax_rate / 100)
         tax_amt = gross - net
         date_str = format_date_for_pdf(inv_data["date"], currency)
 
@@ -247,8 +245,9 @@ def generate_supplier_statement(data):
     statement_filepath = os.path.join(FILES_DIR, statement_filename)
     pdf.output(statement_filepath)
 
-    response = {"file": {"name": statement_filename,
-                         "url": f"/files/{statement_filename}"}}
+    response = {
+        "file": {"name": statement_filename, "url": f"/files/{statement_filename}"}
+    }
     if make_invs:
         response["invoices"] = invoice_refs
     return jsonify(response)
