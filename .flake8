@@ -1,0 +1,6 @@
+[flake8]
+# match Black’s default line length
+max-line-length = 88
+
+# if you run into E203 (whitespace before ':' in slices) or W503 (line break before binary operator),
+# you can ignore them too—but start with just the length tweak.

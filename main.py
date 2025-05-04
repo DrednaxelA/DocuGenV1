@@ -209,7 +209,6 @@ def generate_supplier_statement(data):
         }
 
         # Optionally generate and collect supporting invoices
-        # inv_name = f"INV-{uuid.uuid4().hex[:6]}" leaving this just in case, that's how it used to be
         inv_name = inv_ref
         if make_invs:
             try:
