@@ -1,3 +1,6 @@
 flask
 flask-cors
 fpdf
+
+# development / testing
+pytest>=7.0.0
