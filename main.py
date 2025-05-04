@@ -128,7 +128,12 @@ def create_invoice_pdf(data):
     pdf.cell(0, 10, f"Total: {currency} {gross:.2f}", ln=True)
 
     pdf.output(filepath)
-    return {"name": filename, "url": f"/files/{filename}"}
+    # Return the document_ref along with name and url
+    return {
+        "name": filename,
+        "url": f"/files/{filename}",
+        "document_ref": document_ref
+    }
 
 @app.route("/files/<filename>")
 def serve_file(filename):
@@ -177,18 +182,21 @@ def generate_supplier_statement(data):
     num_lines = safe_int(data.get("number_of_lines"), 0) or safe_int(data.get("line_items_count"), 0)
 
     for i in range(num_lines):
+        # Generate a unique invoice reference and include it
+        inv_ref = f"INV-{uuid.uuid4().hex[:6]}"
         # Build each invoice’s data
         inv_data = {
-            "document_type": "invoice",
-            "supplier_name": supplier,
-            "customer_name": data.get("customer_name") or "Beta LLC",
-            "date": date_from_iso,
-            "due_date": data.get("due_date") or date_to_iso,
-            "currency": currency,
-            "line_items_count": safe_int(data.get("line_items_count"), 3),
-            "total_amount": safe_float(data.get("total_amount"), 0),
-            "tax_rate": tax_rate
-        }
+             "document_type": "invoice",
+             "supplier_name": supplier,
+             "customer_name": data.get("customer_name") or "Beta LLC",
+            "document_ref": inv_ref,
+             "date": date_from_iso,
+             "due_date": data.get("due_date") or date_to_iso,
+             "currency": currency,
+             "line_items_count": safe_int(data.get("line_items_count"), 3),
+             "total_amount": safe_float(data.get("total_amount"), 0),
+             "tax_rate": tax_rate
+         }
 
         # Optionally generate and collect supporting invoices
         inv_name = f"INV-{uuid.uuid4().hex[:6]}"
